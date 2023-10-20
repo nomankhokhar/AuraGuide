@@ -1,0 +1,66 @@
+
+const handleRefreshToken = async (refreshToken: string) => {
+  const body = await {
+    refresh_token: refreshToken,
+  };
+  const response = await ApiFetch({
+    method: 'POST',
+    url: `/refresh/test`,
+    body
+  });
+  if (response) {
+    // The request was successful.
+    if(response.data){
+      const data = await response.data;
+      return data;
+    }
+  }
+};
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+      },
+      async authorize(credentials, req) {
+
+      }
+    })
+  ],
+  session: {
+    strategy: "jwt",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  callbacks: {
+    async jwt({ token, account, user }) {
+      if (user) {
+        
+
+      } else if (Date.now() < (token.expires_at * 1000) - 30000) {
+        return token;
+      }else {
+        try{
+          const userdata:any = await handleRefreshToken(token.refreshToken)
+            if(userdata){
+            
+          }
+        } catch(error){
+          console.error("Error refreshing access token", error)
+        }
+      }
+      
+      return token;
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.accessToken = token.accessToken;
+        session.provider = token.provider;
+        session.userRole = token.userRole;
+      }
+      return session;
+    },
+  },
+};
+
+export default NextAuth(authOptions);
